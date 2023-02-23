@@ -236,11 +236,6 @@ services:
         chown -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags}
         exec /entrypoint airflow version
 
-    # yamllint enable rule:line-length
-    user: "0:0"
-    volumes:
-      - .:/sources
-
   airflow-cli:
     <<: *airflow-common
     container_name: airflow-cli
