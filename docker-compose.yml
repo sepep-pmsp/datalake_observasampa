@@ -175,8 +175,8 @@ services:
     command:
       - -c
       - |
-        mkdir -p /opt/airflow/logs /opt/airflow/dags
-        chown -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags}
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
 
   airflow-cli:
