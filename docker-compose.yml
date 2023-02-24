@@ -74,7 +74,13 @@ services:
     env_file:
       - .env
     command: server --console-address ":9090" /data
-
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+ 
   postgres:
     image: postgres:13
     container_name: postgres
