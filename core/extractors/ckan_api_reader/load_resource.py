@@ -1,7 +1,6 @@
 import requests
 from io import StringIO, BytesIO
 import pandas as pd
-from bs4 import BeautifulSoup
 import json
 
 class ResourceParser:
