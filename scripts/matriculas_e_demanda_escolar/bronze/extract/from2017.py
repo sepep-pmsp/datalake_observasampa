@@ -16,11 +16,6 @@ class ExtractXlsFrom2017:
         
         self.ckan = Ckan(self.domain)
         
-    @property
-    def parser_params(self):
-        
-        return {'skiprows' : 1}
-        
     def get_resources(self, regex:str, extract:bool=False)->Generator:
         
         resources = self.ckan(
