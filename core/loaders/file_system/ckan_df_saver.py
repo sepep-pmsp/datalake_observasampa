@@ -22,7 +22,9 @@ class CkanDfSaver:
         
         name = name.lower()
         name = name.replace(' ', '_').replace('-', '_')
+        name = name.replace('/', '_')
         name = name.replace('__', '_')
+
         
         return name
         
