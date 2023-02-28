@@ -135,11 +135,20 @@ class MatriculasCleanFrom2017:
 
         return pd.concat(dfs)
     
+    def cols_to_int(self, df:DataFrame)->None:
+
+        for col in df.columns:
+            if col!='Distrito':
+                df[col] = df[col].astype(int)
+    
     def __call__(self)->DataFrame:
 
         df_gen = self.load(self.folder, extension='.xls')
 
-        return self.subset_all_dfs(df_gen)
+        df = self.subset_all_dfs(df_gen)
+        self.cols_to_int(df)
+
+        return df
 
 
 
