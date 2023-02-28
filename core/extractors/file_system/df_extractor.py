@@ -10,10 +10,11 @@ class DfLoaderGenerator:
     
     accepted_extensions = {'.csv', '.xls', '.xlsx'}
     
-    def __init__(self,tier:str='bronze', data_dir:str=DATA_FOLDER, **parser_params):
+    def __init__(self,tier:str='bronze', data_dir:str=DATA_FOLDER, add_file=False, **parser_params):
         
         self.tier_folder = self.solve_tier_folder(tier, data_dir)
         self.parser_params = parser_params
+        self.add_file=add_file
     
     def solve_tier_folder(self, tier:str, data_dir:str)->str:
         
@@ -33,18 +34,29 @@ class DfLoaderGenerator:
     def solve_params(self, parser_params:dict=None)->dict:
 
         return parser_params or self.parser_params
+    
+    def solve_add_file(self, df:DataFrame, file:str)->None:
+
+        if self.add_file:
+            df['file'] = file
 
     def open_csv(self, file:str, parser_params:dict=None)->DataFrame:
 
         parser_params = self.solve_params(parser_params)
 
-        return pd.read_csv(file, **parser_params)
+        df = pd.read_csv(file, **parser_params)
+        self.solve_add_file(df, file)
+
+        return df
 
     def open_xl(self, file:str, parser_params:dict=None)->DataFrame:
 
         parser_params = self.solve_params(parser_params)
 
-        return pd.read_excel(file, **parser_params)
+        df = pd.read_excel(file, **parser_params)
+        self.solve_add_file(df, file)
+
+        return df
     
     def solve_open_func(self, extension:str)->Callable:
 

@@ -2,6 +2,7 @@ from core.extractors.file_system import DfLoaderGenerator
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
+import os
 from typing import Generator
 
 class MatriculasCleanFrom2017:
@@ -10,7 +11,7 @@ class MatriculasCleanFrom2017:
 
     def __init__(self):
 
-        self.load = DfLoaderGenerator(tier='bronze')
+        self.load = DfLoaderGenerator(tier='bronze', add_file=True)
 
     def check_col(self, col:str, check_set:set)->bool:
 
@@ -58,7 +59,7 @@ class MatriculasCleanFrom2017:
     def join_distritos_data(self, df:DataFrame, dist_data:pd.Series)->DataFrame:
 
         return pd.concat([dist_data, df], axis=1)
-
+    
     def pipeline_filter_columns(self, df:DataFrame)->DataFrame:
 
         col_inicio = self.get_col_inicio(df)
@@ -97,13 +98,31 @@ class MatriculasCleanFrom2017:
         df = df.iloc[:last_row, :].copy()
         
         return df
+
+    def get_file(self, df:DataFrame)->str:
+
+        return df['file'].unique()[0]
+    
+    def extract_year_from_file(self, file:str)->str:
+
+        return os.path.split(file)[-1].split('.xls')[0][-4:]
+
+    def set_year_col_pipeline(self, df:DataFrame, og_df:DataFrame)->None:
+
+        file = self.get_file(og_df)
+        year = self.extract_year_from_file(file)
+        df['ano'] = year
     
     def pipeline_subset_df(self, df:DataFrame)->DataFrame:
+
+        og_df = df.copy()
 
         df = self.pipeline_filter_columns(df)
         df = self.subset_rows(df)
         df = self.set_true_columns(df)
         df.drop(0, inplace=True)
+        
+        self.set_year_col_pipeline(df, og_df)
 
         return df
     
@@ -113,7 +132,7 @@ class MatriculasCleanFrom2017:
         for df in df_gen:
             df_subset = self.pipeline_subset_df(df)
             dfs.append(df_subset)
-            
+
         return pd.concat(dfs)
     
     def __call__(self)->DataFrame:
