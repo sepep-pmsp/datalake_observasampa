@@ -2,10 +2,13 @@ from core.utils.file_path import solve_path, solve_dir
 from pandas import DataFrame
 from typing import Callable
 
+
+from config import DATA_FOLDER
+
 class CkanDfSaver:
     
     
-    def __init__(self, pkg:str, tier:str='bronze', data_dir:str='data'):
+    def __init__(self, pkg:str, tier:str='bronze', data_dir:str=DATA_FOLDER):
         
         self.tier = self.solve_tier_folder(tier, data_dir)
         self.folder = self.solve_folder(pkg)
@@ -65,16 +68,16 @@ class CkanDfSaver:
         
         fname = self.gen_file_path(metadata)
         try:
-            df.to_csv(fname, sep=';',encoding='utf-8')
+            df.to_csv(fname, sep=';',encoding='utf-8', index=False)
         except UnicodeEncodeError:
-            df.to_csv(fname, sep=';', encoding='latin-1')
+            df.to_csv(fname, sep=';', encoding='latin-1', index=False)
         
         return fname
     
     def save_excel(self, metadata:dict, df:DataFrame)->str:
         
         fname = self.gen_file_path(metadata)
-        df.to_excel(fname)
+        df.to_excel(fname, index=False)
         
         return fname
     
