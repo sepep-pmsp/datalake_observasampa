@@ -1,6 +1,6 @@
 import os
 
-from core.utils.file_path import solve_dir, solve_path
+from core.utils.file_path import solve_path, extract_extension
 from core.utils.io import save_binary_file, save_text_file, save_json_file
 from typing import Union, Callable
 from config import TIERS
@@ -20,14 +20,7 @@ class SimpleFileSaver:
     def __init__(self, tier:str='bronze'):
 
         self.tier = tier
-
-    def extract_extension(self, fpath:str)->str:
-
-        try:
-            return os.path.splitext(fpath)[1]
-        #if file has no extension, such  as ".bashrc"
-        except IndexError:
-            return ''
+        self.extract_extension = extract_extension
 
     @property
     def save_func_mapper(self):

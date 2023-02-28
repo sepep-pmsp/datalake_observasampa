@@ -63,3 +63,12 @@ def delete_existing_files(folder:str, extension:str=None)->None:
     for file in files:
         os.remove(file)
         print(f'File {file} deleted.')
+
+    
+def extract_extension(fpath:str)->str:
+
+    try:
+        return os.path.splitext(fpath)[1]
+    #if file has no extension, such  as ".bashrc"
+    except IndexError:
+        return ''
