@@ -1,9 +1,12 @@
 from core.extractors.file_system import DfLoaderGenerator
+from core.utils.clean import remover_acentos
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
 import os
 from typing import Generator
+
+from config import DATA_FOLDER
 
 class MatriculasCleanFrom2017:
 
@@ -11,7 +14,7 @@ class MatriculasCleanFrom2017:
 
     def __init__(self):
 
-        self.load = DfLoaderGenerator(tier='bronze', add_file=True)
+        self.load = DfLoaderGenerator(tier='bronze', data_dir=DATA_FOLDER, add_file=True)
 
     def check_col(self, col:str, check_set:set)->bool:
 
@@ -134,6 +137,42 @@ class MatriculasCleanFrom2017:
             dfs.append(df_subset)
 
         return pd.concat(dfs)
+
+    def padrao_col_fund(self, col:str)->str:
+
+        if col.startswith('ens_fund'):
+            col = col.replace('ens_', '')
+        
+        return col
+
+    def padrao_ens_medio(self, col:str)->str:
+
+        if col == 'ens_medio':
+            col = col.replace('io', '')
+
+        return col
+    
+    def clean_col(self, col:str)->str:
+
+        col = col.lower()
+        col = col.replace('.', ' ')
+        col = col.replace(' ', '_')
+        col = col.replace('__', '_')
+        col = col.strip('_')
+        col = remover_acentos(col)
+        col = self.padrao_col_fund(col)
+        col = self.padrao_ens_medio(col)
+
+        return col
+    
+    def clean_all_cols(self, df:DataFrame)->None:
+
+        rename = {col : self.clean_col(col) 
+                  for col in df.columns}
+
+        df.rename(rename, axis=1, inplace=True)
+
+        return df
     
     def cols_to_int(self, df:DataFrame)->None:
 
@@ -147,6 +186,7 @@ class MatriculasCleanFrom2017:
 
         df = self.subset_all_dfs(df_gen)
         self.cols_to_int(df)
+        self.clean_all_cols(df)
 
         return df
 
