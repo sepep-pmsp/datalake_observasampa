@@ -23,9 +23,9 @@ def check_dir_exists(folder:str, parent:str=None)->str:
 
     return os.path.exists(folder)
 
-def solve_path_relative(path:str, parent:str)->str:
+def solve_path_relative(path:str, parent:str, create:bool=True)->str:
 
-    if not os.path.exists(parent):
+    if not os.path.exists(parent) and create:
         os.mkdir(parent)
 
     return os.path.join(parent, path)
@@ -63,3 +63,12 @@ def delete_existing_files(folder:str, extension:str=None)->None:
     for file in files:
         os.remove(file)
         print(f'File {file} deleted.')
+
+    
+def extract_extension(fpath:str)->str:
+
+    try:
+        return os.path.splitext(fpath)[1]
+    #if file has no extension, such  as ".bashrc"
+    except IndexError:
+        return ''
