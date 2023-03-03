@@ -1,3 +1,9 @@
+#airflow / minio
+#
+dags/
+logs/
+minio_data/
+
 #project-specific ignores
 prototipo.ipynb
 data/
