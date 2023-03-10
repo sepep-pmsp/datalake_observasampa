@@ -42,7 +42,7 @@ A partir do processo utilizado para a variável acima, incluir uma última trasn
 | ----- | --------- | ------------ | :--------------: | :-------------: | :--------------------: |
 | Variável | Preencher com os códigos das variáveis | String | N/A | N/A | N/A |
 | Região | Preencher com o código da região do ObservaSampa, referente ao município, às Subprefeituras e aos Distritos de São Paulo | String | N/A | N/A | N/A |
-| [Ano] | Preencher o cabeçalho com o ano. Preencher as linhas de valores de área (ver descrição do processo acima) | Inteiro | N/A | N/A | N/A |
+| [Ano] | Preencher o cabeçalho com o ano. Preencher as linhas de valores de área (ver descrição do processo acima) | Decimal | N/A | N/A | N/A |
 
 ### Regras de transformações
 Não se aplica
