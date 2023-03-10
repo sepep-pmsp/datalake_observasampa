@@ -34,7 +34,7 @@ Espera-se executar esse processo apenas uma vez para cada base nova sobre a Cobe
 | ----- | --------- | ------------ | :--------------: | :-------------: | :--------------------: |
 | Variável | Preencher com os códigos das variáveis | String | N/A | N/A | N/A |
 | Região | Preencher com o código da região referente às subprefeuras e ao município de São Paulo | String | N/A | N/A | N/A |
-| [Ano] | Preencher o cabeçalho com o ano "2020". Preencher as linhas de valores com a área da Cobertura Vegetal (ver descrição do processo acima) | Inteiro | N/A | N/A | N/A |
+| [Ano] | Preencher o cabeçalho com o ano "2020". Preencher as linhas de valores com a área da Cobertura Vegetal (ver descrição do processo acima) | Decimal | N/A | N/A | N/A |
 
 ### Regras de transformações
 Não se aplica
