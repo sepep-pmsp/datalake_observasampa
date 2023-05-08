@@ -36,7 +36,7 @@
 #
 # Feel free to modify this file to suit your needs.
 ---
-version: '3'
+version: '3.7'
 x-airflow-common:
   &airflow-common
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
@@ -48,10 +48,12 @@ x-airflow-common:
     - .env
   volumes:
     - ./dags:/opt/airflow/dags
-    - ./hooks:/opt/airflow/hooks
+    - ./src:/opt/airflow/src
     - ./logs:/opt/airflow/logs
-    - ./operators:/opt/airflow/operators
     - ./plugins:/opt/airflow/plugins
+    - ./core:/opt/airflow/core
+  networks:
+    - observasampa-network
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -65,17 +67,19 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: minio
+    container_name: '${MINIO_CONTAINER_NAME}'
     ports:
-      - '9000:9000'
-      - '9090:9090'
+      - '${MINIO_BIND_PORT_1}:${MINIO_PORT_1}'
+      - '${MINIO_BIND_PORT_2}:${MINIO_PORT_2}'
     volumes:
-      - './minio_data:/data'
+      - minio-data:/data
+    networks:
+      - observasampa-network
     env_file:
       - .env
     command: server --console-address ":9090" /data
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "--fail", "http://localhost:${MINIO_PORT_1}/minio/health/live"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -83,9 +87,11 @@ services:
  
   postgres:
     image: postgres:13
-    container_name: postgres
+    container_name: '${POSTGRES_CONTAINER_NAME}'
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+    networks:
+      - observasampa-network
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
@@ -97,6 +103,8 @@ services:
   redis:
     image: redis:latest
     container_name: redis
+    networks:
+      - observasampa-network
     expose:
       - 6379
     healthcheck:
@@ -227,4 +235,10 @@ services:
 
 volumes:
   postgres-db-volume:
+  minio-data:
+    driver: local
+
+networks:
+  observasampa-network:
+    driver: bridge    
 

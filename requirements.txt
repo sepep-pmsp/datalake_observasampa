@@ -19,3 +19,7 @@ pandas
 pyproj
 geopandas
 requests
+pendulum
+apache-airflow-providers-apache-spark
+pyspark
+sqlalchemy-trino

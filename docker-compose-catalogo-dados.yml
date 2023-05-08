@@ -1,0 +1,150 @@
+version: '3.7'
+services:
+  python:
+    build: ./catalogo-dados/
+    hostname: '${PYTHON_HOST}'
+    container_name: '${PYTHON_CONTAINER_NAME}'
+    volumes:
+      - ./catalogo-dados/src:/src
+      - ./catalogo-dados/databuilder/:/src/databuilder/
+    networks:
+      - observasampa-network
+    command: python3 src/trino_data_loader.py
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - neo4j
+      - mariadb
+      - hive-metastore
+      - elasticsearch
+
+  trino:
+    image: 'trinodb/trino'
+    hostname: '${TRINO_HOST}'
+    container_name: '${TRINO_CONTAINER_NAME}'
+    ports:
+      - '${TRINO_BIND_PORT}:${TRINO_PORT}'
+    volumes:
+      - ./etc:/etc/trino
+    networks:
+      - observasampa-network
+
+  mariadb:
+    image: 'mariadb:latest'
+    hostname: '${MARIADB_HOST}'
+    container_name: '${MARIADB_CONTAINER_NAME}'
+    ports:
+      - '${MARIADB_BIND_PORT}:${MARIADB_PORT}'
+    environment:
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+      MYSQL_USER: '${MYSQL_USER}'
+      MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
+      MYSQL_DATABASE: '${MYSQL_DATABASE}'
+    networks:
+      - observasampa-network
+
+  hive-metastore:
+    image: 'bitsondatadev/hive-metastore:latest'
+    hostname: '${HIVE_HOST}'
+    container_name: '${HIVE_CONTAINER_NAME}'
+    ports:
+      - '${HIVE_BIND_PORT}:${HIVE_PORT}' # Metastore Thrift
+    volumes:
+      - ./conf/metastore-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/metastore-site.xml:ro
+    environment:
+      METASTORE_DB_HOSTNAME: '${MARIADB_HOST}'
+    depends_on:
+      - mariadb
+    networks:
+      - observasampa-network
+
+  neo4j:
+      image: neo4j:3.5.26
+      hostname: '${NEO4J_HOST}'
+      container_name: '${NEO4J_CONTAINER_NAME}'
+      environment:
+        - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      ulimits:
+        nofile:
+          soft: 40000
+          hard: 40000
+      ports:
+          - '${NEO4J_BIND_PORT_1}:${NEO4J_PORT_1}'
+          - '${NEO4J_BIND_PORT_2}:${NEO4J_PORT_2}'
+      volumes:
+          # - ./example/docker/neo4j/conf:/var/lib/neo4j/conf
+          # - ./example/docker/neo4j/plugins:/var/lib/neo4j/plugins
+          # - ./example/backup:/backup
+          - neo4j-data:/data
+      networks:
+        - observasampa-network
+
+  elasticsearch:
+      image: elasticsearch:7.13.3
+      container_name: '${ES_CONTAINER_NAME}'
+      ports:
+          - '${ES_BIND_PORT}:${ES_PORT}'
+      volumes:
+        - es-data:/usr/share/elasticsearch/data
+      networks:
+        - observasampa-network
+      ulimits:
+        nofile:
+          soft: 65536
+          hard: 65536
+      environment:
+        - discovery.type=single-node
+  amundsen-search:
+      image: amundsendev/amundsen-search:2.11.1
+      container_name: '${AS_CONTAINER_NAME}'
+      ports:
+        - '${AS_BIND_PORT}:${AS_PORT}'
+      depends_on:
+        - elasticsearch
+      networks:
+        - observasampa-network
+      environment:
+        - PROXY_ENDPOINT=${ES_CONTAINER_NAME}
+      command: 'gunicorn -w 2 --bind :${AS_PORT} search_service.search_wsgi'
+  amundsen-metadata:
+      image: amundsendev/amundsen-metadata:3.9.0
+      container_name: '${AM_CONTAINER_NAME}'
+      depends_on:
+        - neo4j
+      ports:
+        - '${AM_BIND_PORT}:${AM_PORT}'
+      networks:
+        - observasampa-network
+      environment:
+         - PROXY_HOST=bolt://${NEO4J_HOST}
+      command: 'gunicorn -w 2 --bind :${AM_PORT} metadata_service.metadata_wsgi'
+  amundsen-frontend:
+      image: amundsendev/amundsen-frontend:3.12.0
+      container_name: '${AF_CONTAINER_NAME}'
+      depends_on:
+        - amundsen-metadata
+        - amundsen-search
+      ports:
+        - '${AF_BIND_PORT}:${AF_PORT}'
+      networks:
+        - observasampa-network
+      environment:
+        - SEARCHSERVICE_BASE=http://${AS_CONTAINER_NAME}:${AS_PORT}
+        - METADATASERVICE_BASE=http://${AM_CONTAINER_NAME}:${AM_PORT}
+        # Only for easy config-less Quickstart bookmark evalutation. `TestConfig` extends ordinary `LocalConfig` by
+        # defining `AUTH_USER_METHOD` to a hardcoded dummy user in `amundsen_application.tests.test_utils.get_test_user()`
+        # See further docs in https://github.com/amundsen-io/amundsenfrontendlibrary/blob/master/docs/configuration.md#flask
+        # and https://github.com/amundsen-io/amundsenfrontendlibrary/blob/master/docs/configuration.md#authentication
+        - FRONTEND_SVC_CONFIG_MODULE_CLASS=amundsen_application.config.TestConfig
+      command: 'gunicorn -w 2 --bind :${AF_PORT} amundsen_application.wsgi'
+
+volumes:
+  es-data:
+    driver: local
+  neo4j-data:
+    driver: local
+
+networks:
+  observasampa-network:
+    driver: bridge

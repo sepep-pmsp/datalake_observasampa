@@ -1,8 +1,13 @@
+#catalogo-dados
+#
+conf/.metastore-site.xml.swp
+
 #airflow / minio
 #
 dags/
 logs/
 minio_data/
+src/
 
 #project-specific ignores
 prototipo.ipynb
