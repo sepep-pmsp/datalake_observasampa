@@ -1,0 +1,221 @@
+---
+title: "Atualizar variáveis de Crimes Fatais"
+author: "FPR"
+date: "2023-06-06"
+output: html_document
+---
+
+## R Markdown
+# ObservaSampa: Automação de variáveis 
+## Informações do processo
+* **Processo:** Crimes Fatais
+* **Versão:** 1.0
+* **Objetivo:** Atualizar as variáveis do ObservaSampa que compõem os indicadores sobre crimes fatais (entendido por homicídios dolosos e lesão corporal seguida de morte) e correlatos.
+
+## Fontes
+O [SSP Transparência](http://www.ssp.sp.gov.br/transparenciassp/Consulta.aspx) possui em seu repositório os conjuntos de dados [HOMICÍDIO DOLOSO e LESÃO CORPORAL SEGUIDA DE MORTE) o qual possui a apresentação dos dados, podenso ser exportados para planilhas em xls.
+
+Não existe previsão de periodicidade de atualização deste dado. Por isso, deve entrar no ciclo de automação anualmente para verificar se houve alteração.
+
+## Destinos
+
+Este processo tem como destino a criação da planilha com informações das variáveis (V0585, V0586, V0588, V0587 e V0252) formatada no template de importação do Intranet do ObservaSampa. Sendo uma tabela com as respectivas colunas: Variável, Região e Período (ver detalhes adiante na tabela de mapeamento).
+
+## Frequência de execução
+
+Espera-se executar esse processo anualmente, no primerio semestre, para oter os dados do ano anterior.
+
+## Descrição do processo
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+### Para a variável V0585 (Crimes fatais): 
+1. Acessar os dados de HOMICÍDIOS DOLOSOS em ("javascript:__doPostBack('ctl00$cphBody$btnHomicicio','')") que possui a apresentação tabular dos dados mensais de homicídios e o botão "Exportar" para baixar a tabela com estes dados em formato xls; 
+2. Selecionar a aba com o [ano];
+3. Filtrar coluna "Cidade" para "São Paulo"; 
+4. Repetir o processo para cada [ano] e contar registros; 
+```{r message=FALSE}
+h_dol_2017<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=1)
+h_dol_2018<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=2)
+h_dol_2019<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=3)
+h_dol_2020<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=4)
+h_dol_2021<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=5)
+h_dol_2022<- read_xlsx("C:\\Users\\d889710\\Downloads\\Homicidio_2017_2022.xlsx", sheet=6)
+h_dol<- h_dol_2017 %>% rbind(h_dol_2018, h_dol_2019, h_dol_2020, h_dol_2021, h_dol_2022)
+
+h_dol<- h_dol %>% filter(MUNICIPIO_CIRCUNSCRICAO=="São Paulo")
+n_h_doloso <- h_dol %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(`Nº DE VÍT HD`))
+n_h_doloso<- pivot_wider(n_h_doloso, names_from = `ANO ESTATISTICA`, values_from = "n")
+
+
+```
+
+
+5. Acessar os dados de LESÃO CORPORAL SEGUIDA DE MORTE ("javascript:__doPostBack('ctl00$cphBody$btnLesaoMorte','')") que baixa automaticamente uma planilha em xls; 
+6. Para cada aba com o [ano], filtrar a coluna "MUNICIPIO_CIRCUNSCRICAO"=="São Paulo" e contar a quantidade de casos; 
+```{r}
+lcsm_2017<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=2)
+lcsm_2018<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=3)
+lcsm_2019<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=4)
+lcsm_2020<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=5)
+lcsm_2021<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=6)
+lcsm_2022<- read_xlsx("C:\\Users\\d889710\\Downloads\\LCSM_2016_2022.xlsx", sheet=7)
+lcsm_2020<- lcsm_2020 %>% mutate(ID_DELEGACIA= ifelse(ID_DELEGACIA=="RDO NÃO LOCALIZADO", NA, ID_DELEGACIA),
+                                 ID_DELEGACIA= as.numeric(ID_DELEGACIA))
+lcsm_2020<- lcsm_2020 %>% mutate(DATAHORA_REGISTRO_BO= ifelse(DATAHORA_REGISTRO_BO=="RDO NÃO LOCALIZADO", NA,DATAHORA_REGISTRO_BO),
+                         NUM_BO =ifelse(NUM_BO == "RDO NÃO LOCALIZADO", NA, NUM_BO),
+                         NUM_BO =as.numeric(NUM_BO),
+                         ANO_BO= ifelse(ANO_BO=="SEM RESPOSTA DA DELEGACIA. CASO MANTIDO", NA, ANO_BO),
+                                 ANO_BO= as.numeric(ANO_BO),
+                         MUNICIPIO_ELABORACAO=ifelse(MUNICIPIO_ELABORACAO == "RDO NÃO LOCALIZADO", NA, MUNICIPIO_ELABORACAO),
+                         DP_ELABORACAO=ifelse(DP_ELABORACAO == "RDO NÃO LOCALIZADO", NA, DP_ELABORACAO),
+                         SEC_ELABORACAO=ifelse(SEC_ELABORACAO == "RDO NÃO LOCALIZADO", NA, SEC_ELABORACAO),
+                         DEP_ELABORACAO=ifelse(DEP_ELABORACAO == "RDO NÃO LOCALIZADO", NA, DEP_ELABORACAO),
+                         DATA_FATO =ifelse(DATA_FATO == "RDO NÃO LOCALIZADO", NA, DATA_FATO),
+                         HORA_FATO =ifelse(HORA_FATO == "RDO NÃO LOCALIZADO", NA, HORA_FATO),
+                         DESC_TIPOLOCAL=ifelse(DESC_TIPOLOCAL == "RDO NÃO LOCALIZADO", NA, DESC_TIPOLOCAL),
+                         LOGRADOURO=ifelse(LOGRADOURO == "RDO NÃO LOCALIZADO", NA, LOGRADOURO),
+                         NUMERO_LOGRADOURO=ifelse(NUMERO_LOGRADOURO == "RDO NÃO LOCALIZADO", NA, NUMERO_LOGRADOURO),
+                         LATITUDE=ifelse(LATITUDE == "RDO NÃO LOCALIZADO", NA, LATITUDE),
+                         LONGITUDE=ifelse(LONGITUDE == "RDO NÃO LOCALIZADO", NA, LONGITUDE),
+                         TIPO_PESSOA=ifelse(TIPO_PESSOA == "RDO NÃO LOCALIZADO", NA, TIPO_PESSOA),
+                         SEXO_PESSOA=ifelse(SEXO_PESSOA == "RDO NÃO LOCALIZADO", NA, SEXO_PESSOA),
+                         IDADE_PESSOA=ifelse(IDADE_PESSOA == "RDO NÃO LOCALIZADO", NA, IDADE_PESSOA),
+                         DATA_NASCIMENTO_PESSOA=ifelse(DATA_NASCIMENTO_PESSOA == "RDO NÃO LOCALIZADO", NA, DATA_NASCIMENTO_PESSOA),
+                         COR_PELE=ifelse(COR_PELE == "RDO NÃO LOCALIZADO", NA, COR_PELE),
+                         PROFISSAO=ifelse(PROFISSAO == "RDO NÃO LOCALIZADO", NA, PROFISSAO),
+                         ANO_BO= ifelse(ANO_BO=="SEM RESPOSTA DA DELEGACIA. CASO MANTIDO", NA,ANO_BO))
+library(anytime)     
+utctime(lcsm_2020$DATAHORA_REGISTRO_BO)
+lcsm_2020<- lcsm_2020 %>% mutate(DATAHORA_REGISTRO_BO =utctime(DATAHORA_REGISTRO_BO),
+                                 DATA_FATO=utctime(DATA_FATO),
+                                 NUMERO_LOGRADOURO=as.numeric(NUMERO_LOGRADOURO))
+
+
+lcsm<- lcsm_2017 %>% bind_rows(lcsm_2018, lcsm_2019, lcsm_2020, lcsm_2021, lcsm_2022) 
+
+sp_lcsm<- lcsm %>% filter(MUNICIPIO_CIRCUNSCRICAO=="São Paulo")
+n_lcsm <- sp_lcsm %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(LCSM))
+n_lcsm<- pivot_wider(n_lcsm, names_from = `ANO ESTATISTICA`, values_from = "n")
+
+```
+
+7. Somar os dados de HOMICÍDIOS DOLOSOS com os de LESÃO CORPORAL SEGUIDA DE MORTE, para cada [ano];
+8. Incluir, em primeira posição, coluna "variavel" com o código da variável, seguida da coluna "regiao", com o código do municpipio ("M00"), e da coluna [ano], com o valor total de crimes fatais calculado anteriormente por ano.
+```{r}
+v0585<-n_h_doloso+ n_lcsm
+v0585<- v0585 %>% mutate(regiao="M00",
+                         variavel="V0585") %>% 
+  select(variavel, regiao, "2017", "2018", "2019", "2020", "2021", "2022")
+write_csv2(v0585, file = "C:\\Users\\d889710\\Documents\\V0585.csv")
+```
+
+
+### Para a variável V0586 (Crimes fatais - População Negra): 
+1. Acessar os dados de HOMICÍDIOS DOLOSOS em ("javascript:__doPostBack('ctl00$cphBody$btnHomicicio','')") que possui a apresentação tabular dos dados mensais de homicídios e o botão "Exportar" para baixar a tabela com estes dados em formato xls; 
+2. Filtrar coluna "Cidade" para "São Paulo";
+3. Selecionar o [ano], filtrar coluna "COR_PELE" para "Preto" e "Pardo"; 
+4. Contar registros e exportar os dados de cada [ano]; 
+```{r}
+#parte do processo já foi realizado anteriormente, então seguimos a partir do ponto 3
+n_h_doloso_negra<- h_dol %>% filter(COR_PELE=="Preta" | COR_PELE=="Parda")
+n_h_doloso_negra <- n_h_doloso_negra %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(`Nº DE VÍT HD`))
+n_h_doloso_negra<- pivot_wider(n_h_doloso_negra, names_from = `ANO ESTATISTICA`, values_from = "n")
+
+```
+5. Acessar os dados de LESÃO CORPORAL SEGUIDA DE MORTE ("javascript:__doPostBack('ctl00$cphBody$btnLesaoMorte','')") que baixa automaticamente uma planilha em xls; 
+6. Para cada aba com o [ano], filtrar a coluna "MUNICIPIO_CIRCUNSCRICAO"=="São Paulo", filtrar coluna "COR_PELE" para "Preto" e "Pardo" e contar a quantidade de casos;
+```{r}
+n_lcsm_negra<- sp_lcsm %>% filter(COR_PELE=="Preta" | COR_PELE=="Parda")
+n_lcsm_negra <- n_lcsm_negra %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(LCSM))
+n_lcsm_negra<- pivot_wider(n_lcsm_negra, names_from = `ANO ESTATISTICA`, values_from = "n")
+
+```
+
+7. Somar os dados de HOMICÍDIOS DOLOSOS com os de LESÃO CORPORAL SEGUIDA DE MORTE para cada [ano];
+8. Incluir, em primeira posição, coluna "variavel" com o código da variável, seguida da coluna "regiao", com o código do municpipio ("M00"), e da coluna [ano], com o valor total de crimes fatais calculado anteriormente por ano.
+```{r}
+v0586<-n_h_doloso_negra + n_lcsm_negra
+v0586<- v0586 %>% mutate(regiao="M00",
+                         variavel="V0586") %>% 
+  select(variavel, regiao, "2017", "2018", "2019", "2020", "2021", "2022")
+write_csv2(v0586, file = "C:\\Users\\d889710\\Documents\\V0586.csv")
+```
+
+
+### Para a variável V0587 (Crimes fatais - Mulheres): 
+1. Acessar os dados de HOMICÍDIOS DOLOSOS em ("javascript:__doPostBack('ctl00$cphBody$btnHomicicio','')") que possui a apresentação tabular dos dados mensais de homicídios e o botão "Exportar" para baixar a tabela com estes dados em formato xls; 
+2. Filtrar coluna "Cidade" para "São Paulo"; 
+3. Selecionar o [ano], filtrar coluna "SEXO_PESSOA" para "Feminino"; 
+4. Contar registros e exportar os dados de cada [ano]; 
+```{r}
+#parte do processo já foi realizado anteriormente, então seguimos a partir do ponto 3
+n_h_doloso_mulher<- h_dol %>% filter(SEXO_PESSOA=="Feminino")
+n_h_doloso_mulher <- n_h_doloso_mulher %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(`Nº DE VÍT HD`))
+n_h_doloso_mulher<- pivot_wider(n_h_doloso_mulher, names_from = `ANO ESTATISTICA`, values_from = "n")
+
+```
+
+5. Acessar os dados de LESÃO CORPORAL SEGUIDA DE MORTE ("javascript:__doPostBack('ctl00$cphBody$btnLesaoMorte','')") que baixa automaticamente uma planilha em xls; 
+6. Para cada aba com o [ano], filtrar a coluna "MUNICIPIO_CIRCUNSCRICAO"=="São Paulo", filtrar coluna "SEXO_PESSOA" para "Feminino" e contar a quantidade de casos; 
+```{r}
+n_lcsm_mulher<- sp_lcsm %>% filter(SEXO_PESSOA=="Feminino")
+n_lcsm_mulher <- n_lcsm_mulher %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(LCSM))
+n_lcsm_mulher<- pivot_wider(n_lcsm_mulher, names_from = `ANO ESTATISTICA`, values_from = "n")
+#Incluir ano de 2021 com valor zero, pois não há casos
+n_lcsm_mulher<-n_lcsm_mulher %>% mutate("2021"=0)
+n_lcsm_mulher<- n_lcsm_mulher %>%  select("2017", "2018", "2019", "2020", "2021", "2022")
+```
+
+7. Somar os dados de HOMICÍDIOS DOLOSOS com os de LESÃO CORPORAL SEGUIDA DE MORTE para cada [ano]; 
+8. Incluir, em primeira posição, coluna "variavel" com o código da variável, seguida da coluna "regiao", com o código do municpipio ("M00"), e da coluna [ano], com o valor total de crimes fatais calculado anteriormente por ano. 
+```{r}
+v0587<-n_h_doloso_mulher + n_lcsm_mulher
+v0587<- v0587 %>% mutate(regiao="M00",
+                         variavel="V0587") %>% 
+  select(variavel, regiao, "2017", "2018", "2019", "2020", "2021", "2022")
+write_csv2(v0587, file = "C:\\Users\\d889710\\Documents\\V0587.csv")
+```
+
+### Para a variável V0588 (Número de homicídios de homens jovens): 
+1. Acessar os dados de HOMICÍDIOS DOLOSOS em ("javascript:__doPostBack('ctl00$cphBody$btnHomicicio','')") que possui a apresentação tabular dos dados mensais de homicídios e o botão "Exportar" para baixar a tabela com estes dados em formato xls; 
+2. Filtrar coluna "Cidade" para "São Paulo"; 
+3. Selecionar o [ano], filtrar coluna "IDADE_PESSOA" para >=15 e <=29; 
+4. Contar registros e exportar os dados de cada [ano]; 
+5. Incluir, em primeira posição, coluna "variavel" com o código da variável, seguida da coluna "regiao", com o código do municpipio ("M00"), e da coluna [ano], com o valor total calculado anteriormente por ano. 
+```{r}
+#parte do processo já foi realizado anteriormente, então seguimos a partir do ponto 3
+n_h_doloso_jovem<- h_dol %>% filter(IDADE_PESSOA>=15 & IDADE_PESSOA<=29)
+n_h_doloso_jovem <- n_h_doloso_jovem %>% group_by(`ANO ESTATISTICA`) %>% 
+  summarise(n= sum(`Nº DE VÍT HD`))
+n_h_doloso_jovem<- pivot_wider(n_h_doloso_jovem, names_from = `ANO ESTATISTICA`, values_from = "n")
+v0588<- n_h_doloso_jovem %>% mutate(regiao="M00",
+                         variavel="V0588") %>% 
+  select(variavel, regiao, "2017", "2018", "2019", "2020", "2021", "2022")
+write_csv2(v0588, file = "C:\\Users\\d889710\\Documents\\V0588.csv")
+```
+
+
+### Para a variável V0252 (Registros de homicídios dolosos): 
+1. Acessar os dados de HOMICÍDIOS DOLOSOS em ("javascript:__doPostBack('ctl00$cphBody$btnHomicicio','')") que possui a apresentação tabular dos dados mensais de homicídios e o botão "Exportar" para baixar a tabela com estes dados em formato xls; 
+2. Filtrar coluna "Cidade" para "São Paulo"; 
+3. Contar registros e exportar os dados de cada [ano]; 
+4. Incluir, em primeira posição, coluna "variavel" com o código da variável, seguida da coluna "regiao", com o código do municpipio ("M00"), e da coluna [ano], com o valor total calculado anteriormente por ano. 
+```{r}
+#parte do processo já foi realizado no chunk 2
+v0252<- n_h_doloso %>% mutate(regiao="M00",
+                         variavel="V0252") %>% 
+  select(variavel, regiao, "2017", "2018", "2019", "2020", "2021", "2022")
+write_csv2(v0252, file = "C:\\Users\\d889710\\Documents\\V0252.csv")
+```
+
+
+--Fim do processo--
