@@ -11,7 +11,7 @@ Anualmente a SMIT atualiza dados trimestrais. A cada ano (anualmente) deve-se co
 
 ## Destinos
 
-Este processo tem como destino a criação da planilha com informações das variáveis (V2001, V0202, V0485 e V0486) formatada no template de importação do Intranet do ObservaSampa. Sendo uma tabela com as respectivas colunas: Variável, Região e Período (ver detalhes adiante na tabela de mapeamento).
+Este processo tem como destino a criação da planilha com informações das variáveis (V0201, V0202, V0485 e V0486) formatada no template de importação do Intranet do ObservaSampa. Sendo uma tabela com as respectivas colunas: Variável, Região e Período (ver detalhes adiante na tabela de mapeamento).
 
 ## Frequência de execução
 
